@@ -8,7 +8,7 @@ An Auction Contract to Lock NFTs and bid on them using Coin
 - Seller locks an nft for 50000 blocks till the auction is completed
 - Now anyone can place bids
     -   The previous highest bidder is returned with his funds
-    -   While returning funds, a solidity contract may be attacked with `reentrancy` but cosmwasm by design is `reeentrancy` proof
+    -   While returning funds, a solidity contract may be attacked with `reentrancy` but cosmwasm by design is `reentrancy` proof
 - After 50000 blocks expired, listing can be withdrawn
     -   Max bidder can withdraw his funds
     -   If noone bids, the seller can withdraw this to get his NFT released.
