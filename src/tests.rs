@@ -23,7 +23,7 @@ mod tests {
 
     fn mock_alice_place_listing(deps: DepsMut, sent: &[Coin]) {
         // alice can register an available name
-        let info = mock_info("alice_key", sent);
+        let info = mock_info("bob_key", sent);
         let msg = ExecuteMsg::PlaceListing {
             nft_contract_address: Addr::unchecked("contract").to_string(),
             id: "1".to_string(),
@@ -53,6 +53,7 @@ mod tests {
             .expect("contract successfully handles WithdrawListing message");
     }
 
+    // instantiates the auction contract
     #[test]
     fn proper_init() {
         let mut deps = mock_dependencies(&[]);
@@ -62,6 +63,7 @@ mod tests {
         assert_config_state(deps.as_ref(), Config { listing_count: 0 });
     }
 
+    // Puts an NFT for Auction
     #[test]
     fn place_listing() {
         let mut deps = mock_dependencies(&[]);
@@ -69,6 +71,8 @@ mod tests {
         mock_alice_place_listing(deps.as_mut(), &coins(0, "utst"));
     }
 
+    // Puts an NFT for Auction
+    // Places a bid on that NFT
     #[test]
     fn place_bid() {
         let mut deps = mock_dependencies(&[]);
@@ -77,6 +81,7 @@ mod tests {
         mock_alice_place_bid(deps.as_mut(), &coins(4, "utst"));
     }
 
+    // Test should fail since the bid placed is of a lesser amount
     #[test]
     fn fails_on_place_bid() {
         let mut deps = mock_dependencies(&[]);
@@ -95,6 +100,7 @@ mod tests {
         }
     }
 
+    // Withdraws a listing and transfers the listing and token to the appropriate parties
     #[test]
     fn withdraw_listing() {
         let mut deps = mock_dependencies(&[]);
@@ -104,6 +110,8 @@ mod tests {
         mock_alice_withdraw_listing(deps.as_mut(), &coins(0, "utst"))
     }
 
+
+    // Test should fail since this simulates an environment of 40000 blocks from auction start while auction ends 
     #[test]
     fn fails_on_withdraw_listing() {
         let mut deps = mock_dependencies(&[]);

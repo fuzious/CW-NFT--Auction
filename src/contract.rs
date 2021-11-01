@@ -145,6 +145,9 @@ pub fn execute_withdraw_listing(
     if listing.block_limit >= _env.block.height {
         return Err(ContractError::AuctionNotEnded {});
     }
+    // remove listing from the store
+    list_resolver(deps.storage).remove(key);
+    
     // If noone has put a bid then since the max_bidder was initialised with the seller then he will be sent back with his NFT
     // Transfer the locked NFT to highest bidder and bid amount to the seller
     Ok(Response::new()
