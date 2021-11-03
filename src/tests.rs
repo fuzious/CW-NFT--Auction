@@ -110,8 +110,7 @@ mod tests {
         mock_alice_withdraw_listing(deps.as_mut(), &coins(0, "utst"))
     }
 
-
-    // Test should fail since this simulates an environment of 40000 blocks from auction start while auction ends 
+    // Test should fail since this simulates an environment of 40000 blocks from auction start while auction ends
     #[test]
     fn fails_on_withdraw_listing() {
         let mut deps = mock_dependencies(&[]);

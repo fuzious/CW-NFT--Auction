@@ -34,7 +34,6 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-
         // Route messages to appropriate handlers
         ExecuteMsg::PlaceListing {
             nft_contract_address,
@@ -54,7 +53,6 @@ pub fn execute_bid_listing(
     info: MessageInfo,
     listing_id: String,
 ) -> Result<Response, ContractError> {
-
     // Fetch listing from listing_id
     let key = listing_id.as_bytes();
     let mut listing = list_resolver_read(deps.storage).load(key)?;
@@ -72,13 +70,18 @@ pub fn execute_bid_listing(
     listing.max_bid = sent_coin;
     list_resolver(deps.storage).save(key, &listing)?;
 
-    // return money to last bidder
-    Ok(Response::new()
-        .add_attribute("Bidding", listing_id)
-        .add_message(CosmosMsg::Bank(BankMsg::Send {
-            to_address: last_bidder.to_string(),
-            amount: vec![last_bid.unwrap()],
-        })))
+    if _env.contract.address != last_bidder {
+        // return money to last bidder
+        Ok(Response::new()
+            .add_attribute("Bidding", listing_id)
+            .add_message(CosmosMsg::Bank(BankMsg::Send {
+                to_address: last_bidder.to_string(),
+                amount: vec![last_bid.unwrap()],
+            })))
+    } else {
+        // no need to return money since first bid
+        Ok(Response::new().add_attribute("Bidding", listing_id))
+    }
 }
 
 pub fn execute_place_listing(
@@ -93,7 +96,7 @@ pub fn execute_place_listing(
     let config_state = config(deps.storage).load()?;
     let listing_count = config_state.listing_count + 1;
     let nft_contract = deps.api.addr_validate(&nft_contract_address)?;
-    
+
     // Each auction has a limit for 50000 blocks
     let listing = Listing {
         token_id: id.clone(),
@@ -147,42 +150,38 @@ pub fn execute_withdraw_listing(
     }
     // remove listing from the store
     list_resolver(deps.storage).remove(key);
-    
+
     // If noone has put a bid then then seller will be sent back with his NFT
     // Transfer the locked NFT to highest bidder and bid amount to the seller
-    if listing.seller != listing.max_bidder {
+    if _env.contract.address != listing.max_bidder {
         Ok(Response::new()
-        .add_attribute("listing_sold", listing_id.to_string())
-        .add_messages(vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: listing.contract_addr.to_string(),
-                funds: vec![],
-                msg: to_binary(&TransferNft {
-                    recipient: listing.max_bidder.to_string(),
-                    token_id: listing_id.clone(),
-                })?,
-            }),
-            CosmosMsg::Bank(BankMsg::Send {
-                to_address: listing.max_bidder.to_string(),
-                amount: vec![listing.max_bid.unwrap()],
-            }),
-        ]))
+            .add_attribute("listing_sold", listing_id.to_string())
+            .add_messages(vec![
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: listing.contract_addr.to_string(),
+                    funds: vec![],
+                    msg: to_binary(&TransferNft {
+                        recipient: listing.max_bidder.to_string(),
+                        token_id: listing_id.clone(),
+                    })?,
+                }),
+                CosmosMsg::Bank(BankMsg::Send {
+                    to_address: listing.max_bidder.to_string(),
+                    amount: vec![listing.max_bid.unwrap()],
+                }),
+            ]))
     } else {
         Ok(Response::new()
-        .add_attribute("listing_unsold", listing_id.to_string())
-        .add_messages(vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
+            .add_attribute("listing_unsold", listing_id.to_string())
+            .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: listing.contract_addr.to_string(),
                 funds: vec![],
                 msg: to_binary(&TransferNft {
                     recipient: listing.max_bidder.to_string(),
                     token_id: listing_id.clone(),
                 })?,
-            })
-        ]))
+            })]))
     }
-
-    
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -194,7 +193,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn query_list_resolver(deps: Deps, _env: Env, id: String) -> StdResult<Binary> {
-
     // Fetch listing from listing_id
     let key = id.as_bytes();
 
