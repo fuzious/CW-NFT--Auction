@@ -100,7 +100,7 @@ pub fn execute_place_listing(
         contract_addr: nft_contract,
         seller: info.sender.clone(),
         max_bid: minimum_bid,
-        max_bidder: info.sender.clone(),
+        max_bidder: _env.contract.address.clone(),
         block_limit: _env.block.height + 50000,
     };
 
@@ -148,10 +148,11 @@ pub fn execute_withdraw_listing(
     // remove listing from the store
     list_resolver(deps.storage).remove(key);
     
-    // If noone has put a bid then since the max_bidder was initialised with the seller then he will be sent back with his NFT
+    // If noone has put a bid then then seller will be sent back with his NFT
     // Transfer the locked NFT to highest bidder and bid amount to the seller
-    Ok(Response::new()
-        .add_attribute("listing_ended", listing_id.to_string())
+    if listing.seller != listing.max_bidder {
+        Ok(Response::new()
+        .add_attribute("listing_sold", listing_id.to_string())
         .add_messages(vec![
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: listing.contract_addr.to_string(),
@@ -166,6 +167,22 @@ pub fn execute_withdraw_listing(
                 amount: vec![listing.max_bid.unwrap()],
             }),
         ]))
+    } else {
+        Ok(Response::new()
+        .add_attribute("listing_unsold", listing_id.to_string())
+        .add_messages(vec![
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: listing.contract_addr.to_string(),
+                funds: vec![],
+                msg: to_binary(&TransferNft {
+                    recipient: listing.max_bidder.to_string(),
+                    token_id: listing_id.clone(),
+                })?,
+            })
+        ]))
+    }
+
+    
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
