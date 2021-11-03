@@ -177,7 +177,7 @@ pub fn execute_withdraw_listing(
                 contract_addr: listing.contract_addr.to_string(),
                 funds: vec![],
                 msg: to_binary(&TransferNft {
-                    recipient: listing.max_bidder.to_string(),
+                    recipient: listing.seller.to_string(),
                     token_id: listing_id.clone(),
                 })?,
             })]))
